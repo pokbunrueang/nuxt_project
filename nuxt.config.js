@@ -1,9 +1,7 @@
 import colors from 'vuetify/es5/util/colors'
 
 export default {
-  // ปิด SSR เพื่อใช้โหมด Client-side
   ssr: false,
-
   target: 'static',
 
   head: {
@@ -16,20 +14,25 @@ export default {
     link: [{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }]
   },
 
-  // ต้องระบุ modules ให้ครบเพื่อให้รู้จัก axios
+  // ใช้ dotenv โหลด .env
   modules: [
-    '@nuxtjs/axios',
-    '@nuxtjs/pwa',
+    '@nuxtjs/dotenv',
+    '@nuxtjs/pwa'
+  ],
+
+  // แนะนำ: runtime config แทน env
+  publicRuntimeConfig: {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY
+  },
+
+  plugins: [
+    '~/plugins/supabase.js'
   ],
 
   buildModules: [
-    '@nuxtjs/vuetify',
+    '@nuxtjs/vuetify'
   ],
-
-  // ตั้งค่า baseURL ให้ชี้ไปที่โฟลเดอร์ api ของคุณ
-  axios: {
-    baseURL: 'http://localhost/api/', 
-  },
 
   vuetify: {
     customVariables: ['~/assets/variables.scss'],
@@ -47,5 +50,10 @@ export default {
         }
       }
     }
+  },
+
+  build: {
+    // Nuxt2 + supabase-js v1 ไม่ต้อง transpile
+    transpile: []
   }
 }

@@ -5,37 +5,52 @@
         <v-icon x-large color="primary" class="mr-3">mdi-cart-variant</v-icon>
         ตะกร้าสินค้าของคุณ
       </h1>
-      
+
       <v-row v-if="cart.length > 0">
         <v-col cols="12" md="8">
-          <v-card v-for="(item, i) in cart" :key="i" class="mb-4 pa-4 card-dark shadow-lg" dark rounded="xl">
+          <v-card
+            v-for="(item, i) in cart"
+            :key="i"
+            class="mb-4 pa-4 card-dark shadow-lg"
+            dark
+            rounded="xl"
+          >
             <v-row align="center">
               <v-col cols="12" sm="3">
-                <v-img 
-                  :src="`http://localhost/api/uploads/${item.products_image || 'no-image.png'}`" 
-                  rounded="lg" 
+                <v-img
+                  :src="
+                    item.products_image
+                      ? `${$config.SUPABASE_URL}/storage/v1/object/public/product-images/${item.products_image}`
+                      : '/no-image.png'
+                  "
+                  rounded="lg"
                   height="120"
                   contain
                   class="grey darken-4"
                 ></v-img>
               </v-col>
+
               <v-col cols="12" sm="4">
                 <div class="text-h6 font-weight-bold">{{ item.products_name }}</div>
-                <div class="primary--text text-subtitle-1 font-weight-black">{{ item.products_price }} ฿</div>
+                <div class="primary--text text-subtitle-1 font-weight-black">
+                  {{ item.products_price }} ฿
+                </div>
               </v-col>
+
               <v-col cols="8" sm="3">
-                <v-text-field 
-                  v-model.number="item.quantity" 
-                  type="number" 
-                  label="จำนวน" 
-                  outlined 
-                  dense 
-                  hide-details 
+                <v-text-field
+                  v-model.number="item.quantity"
+                  type="number"
+                  label="จำนวน"
+                  outlined
+                  dense
+                  hide-details
                   min="1"
                   @input="updateCart"
                   class="rounded-lg"
                 ></v-text-field>
               </v-col>
+
               <v-col cols="4" sm="2" class="text-right">
                 <v-btn icon color="red lighten-1" @click="removeItem(i)">
                   <v-icon>mdi-delete-outline</v-icon>
@@ -49,36 +64,31 @@
           <v-card class="pa-6 card-dark border-primary" dark rounded="xl">
             <h2 class="text-h5 font-weight-bold mb-4">สรุปยอดคำสั่งซื้อ</h2>
             <v-divider class="mb-6 grey darken-2"></v-divider>
-            
+
             <div class="d-flex justify-space-between mb-4">
               <span class="grey--text text--lighten-1">จำนวนสินค้าทั้งหมด:</span>
               <span class="font-weight-bold">{{ totalItems }} เล่ม</span>
             </div>
-            
+
             <div class="d-flex justify-space-between mb-6">
               <span class="text-h6">ราคารวมทั้งสิ้น:</span>
               <span class="text-h5 primary--text font-weight-black">{{ totalPrice }} ฿</span>
             </div>
 
-            <v-btn 
-              color="success" 
-              block 
-              x-large 
-              rounded 
+            <v-btn
+              color="success"
+              block
+              x-large
+              rounded
               depressed
-              class="font-weight-bold py-6 text-h6 shadow-green" 
+              class="font-weight-bold py-6 text-h6 shadow-green"
               @click="checkout"
             >
               <v-icon left>mdi-check-circle</v-icon>
               ยืนยันการสั่งซื้อ
             </v-btn>
-            
-            <v-btn 
-              text 
-              block 
-              class="mt-4 grey--text" 
-              to="/"
-            >
+
+            <v-btn text block class="mt-4 grey--text" to="/">
               <v-icon left size="18">mdi-arrow-left</v-icon> เลือกสินค้าต่อ
             </v-btn>
           </v-card>
@@ -106,52 +116,89 @@ export default {
   data: () => ({
     cart: []
   }),
+
   computed: {
     totalPrice() {
-      return this.cart.reduce((total, item) => total + (item.products_price * item.quantity), 0);
+      return this.cart.reduce(
+        (total, item) => total + Number(item.products_price) * Number(item.quantity),
+        0
+      )
     },
+
     totalItems() {
-      return this.cart.reduce((total, item) => total + parseInt(item.quantity || 0), 0);
+      return this.cart.reduce((total, item) => total + Number(item.quantity || 0), 0)
     }
   },
+
   mounted() {
-    // โหลดข้อมูลจาก LocalStorage
-    this.cart = JSON.parse(localStorage.getItem('manga_cart') || '[]');
+    this.cart = JSON.parse(localStorage.getItem('manga_cart') || '[]')
   },
+
   methods: {
     updateCart() {
-      // ตรวจสอบไม่ให้จำนวนน้อยกว่า 1
       this.cart = this.cart.map(item => {
-        if (item.quantity < 1) item.quantity = 1;
-        return item;
-      });
-      localStorage.setItem('manga_cart', JSON.stringify(this.cart));
+        if (Number(item.quantity) < 1) item.quantity = 1
+        return item
+      })
+
+      localStorage.setItem('manga_cart', JSON.stringify(this.cart))
     },
+
     removeItem(index) {
       if (confirm('คุณต้องการลบสินค้านี้ออกจากตะกร้าใช่หรือไม่?')) {
-        this.cart.splice(index, 1);
-        this.updateCart();
+        this.cart.splice(index, 1)
+        this.updateCart()
       }
     },
+
     async checkout() {
       try {
-        const data = {
-          total_price: this.totalPrice
-        };
-        
-        // ส่งข้อมูลไปที่ Backend PHP
-        const response = await this.$axios.$post('order_save.php', data);
-        
-        if (response.status) {
-          alert('สั่งซื้อสำเร็จ! เลขที่คำสั่งซื้อของคุณคือ: ' + response.order_id);
-          localStorage.removeItem('manga_cart'); // ล้างข้อมูลในตะกร้า
-          this.$router.push('/'); // กลับหน้าแรก
-        } else {
-          alert('ไม่สามารถบันทึกข้อมูลการสั่งซื้อได้');
+        // 1) เช็ค user login
+        const { data: userData, error: userErr } = await this.$supabase.auth.getUser()
+        if (userErr) throw userErr
+
+        const user = userData.user
+        if (!user) {
+          alert('กรุณาเข้าสู่ระบบก่อนสั่งซื้อ')
+          this.$router.push('/login')
+          return
         }
+
+        // 2) สร้าง order
+        const { data: order, error: orderErr } = await this.$supabase
+          .from('orders')
+          .insert([
+            {
+              user_id: user.id,
+              total_price: this.totalPrice,
+              status: 'pending'
+            }
+          ])
+          .select()
+          .single()
+
+        if (orderErr) throw orderErr
+
+        // 3) สร้าง order_items
+        const items = this.cart.map(item => ({
+          order_id: order.id,
+          product_id: item.products_id, // ถ้าใน supabase ใช้ id ให้เปลี่ยนเป็น item.id
+          product_name: item.products_name,
+          product_price: Number(item.products_price),
+          quantity: Number(item.quantity),
+          product_image: item.products_image || null
+        }))
+
+        const { error: itemsErr } = await this.$supabase.from('order_items').insert(items)
+        if (itemsErr) throw itemsErr
+
+        // 4) success
+        alert('สั่งซื้อสำเร็จ! เลขที่คำสั่งซื้อ: ' + order.id)
+        localStorage.removeItem('manga_cart')
+        this.$router.push('/')
       } catch (e) {
-        console.error(e);
-        alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+        console.error(e)
+        alert(e.message || 'เกิดข้อผิดพลาดในการสั่งซื้อ')
       }
     }
   }
@@ -164,14 +211,14 @@ export default {
   min-height: 100vh;
 }
 .card-dark {
-  background-color: #1E1E1E !important;
+  background-color: #1e1e1e !important;
   border: 1px solid #333 !important;
 }
 .border-primary {
-  border: 2px solid #311B92 !important;
+  border: 2px solid #311b92 !important;
 }
 .shadow-lg {
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
 }
 .shadow-green {
   box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;

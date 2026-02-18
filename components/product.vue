@@ -1,36 +1,55 @@
 <template>
   <div>
-    <v-btn color="info" @click="productQuery">Load Product Data</v-btn>
-    <v-btn color="info" @click="openInsertDialog">Insert Data</v-btn>
-    <v-data-table :items="product" :headers="headers">
+    <v-btn color="info" class="mr-2" @click="productQuery">
+      Load Product Data
+    </v-btn>
+
+    <v-btn color="success" @click="openInsertDialog">
+      Insert Data
+    </v-btn>
+
+    <v-data-table :items="products" :headers="headers" class="mt-4">
       <template v-slot:item.actions="{ item }">
-        <v-btn small @click="openEditDialog(item)" color="warning">
+        <v-btn small @click="openEditDialog(item)" color="warning" class="mr-1">
           <v-icon>mdi-pencil</v-icon>
         </v-btn>
-        <v-btn small @click="deleteProduct(item)" color="error">
+
+        <v-btn small @click="deleteProduct(item)" color="error" class="mr-1">
           <v-icon>mdi-delete</v-icon>
-        </v-btn> 
+        </v-btn>
+
         <v-btn small color="primary" @click="addToCart(item)">
           Add to Cart
         </v-btn>
       </template>
     </v-data-table>
 
-
-    <v-dialog
-      v-model="productDialog"
-      width="500"
-    >
+    <!-- Dialog -->
+    <v-dialog v-model="productDialog" width="500">
       <v-card>
         <v-card-title class="text-h5 grey lighten-2">
-          Product
+          {{ isEdit ? "Edit Product" : "Insert Product" }}
         </v-card-title>
 
         <v-card-text>
           <v-form ref="form">
-            <v-text-field v-model="productForm.products_name" label="Name" required></v-text-field>
-            <v-text-field v-model="productForm.products_price" label="Price" required type="number"></v-text-field>
-            <v-textarea v-model="productForm.products_detail" label="Detail"></v-textarea>
+            <v-text-field
+              v-model="productForm.name"
+              label="Name"
+              required
+            ></v-text-field>
+
+            <v-text-field
+              v-model.number="productForm.price"
+              label="Price"
+              required
+              type="number"
+            ></v-text-field>
+
+            <v-textarea
+              v-model="productForm.detail"
+              label="Detail"
+            ></v-textarea>
           </v-form>
         </v-card-text>
 
@@ -38,8 +57,12 @@
 
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="primary" text @click="productDialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveProduct">Save</v-btn>
+          <v-btn color="grey" text @click="productDialog = false">
+            Cancel
+          </v-btn>
+          <v-btn color="primary" :loading="loading" @click="saveProduct">
+            Save
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -47,80 +70,158 @@
 </template>
 
 <script>
-import { mapActions } from 'vuex'
+import { mapActions } from "vuex"
+
 export default {
   data() {
     return {
       headers: [
-        { text: 'Product ID', value: 'products_id' },
-        { text: 'Name', value: 'products_name' },
-        { text: 'Price', value: 'products_price' },
-        { text: 'Detail', value: 'products_detail' },
-        { text: 'Actions', value: 'actions', sortable: false },
+        { text: "ID", value: "id" },
+        { text: "Name", value: "name" },
+        { text: "Price", value: "price" },
+        { text: "Detail", value: "detail" },
+        { text: "Actions", value: "actions", sortable: false }
       ],
-      product: [],
-      productDialog:false,
-      isEdit:false,
+
+      products: [],
+
+      productDialog: false,
+      isEdit: false,
+      loading: false,
+
       productForm: {
-        products_id: null,
-        products_name: '',
-        products_price: '',
-        products_detail: '',
-      },
+        id: null,
+        name: "",
+        price: 0,
+        detail: ""
+      }
     }
   },
-  mounted(){
+
+  mounted() {
     this.productQuery()
   },
+
   methods: {
-   async productQuery(){
-      let result = await this.$axios.post('http://localhost:8080/myfirst_app_api/products_select.php')
-      console.log(result.data)
-      this.product = result.data
+    ...mapActions({
+      addCart: "cart/addCart"
+    }),
+
+    // -------------------------
+    // LOAD PRODUCTS
+    // -------------------------
+    async productQuery() {
+      try {
+        const { data, error } = await this.$supabase
+          .from("products")
+          .select("*")
+          .order("id", { ascending: true })
+
+        if (error) throw error
+        this.products = data || []
+      } catch (e) {
+        console.error(e)
+        alert(e.message || "โหลดสินค้าไม่สำเร็จ")
+      }
     },
 
-    openInsertDialog(){
+    // -------------------------
+    // DIALOG
+    // -------------------------
+    openInsertDialog() {
       this.isEdit = false
-      this.productForm = { products_id: null, products_name: '', products_price: '', products_detail: '' }
+      this.productForm = { id: null, name: "", price: 0, detail: "" }
       this.productDialog = true
     },
 
-    openEditDialog(item){
+    openEditDialog(item) {
       this.isEdit = true
       this.productForm = { ...item }
       this.productDialog = true
     },
 
-    async saveProduct(){
-      try{
-        if(this.isEdit){
-          await this.$axios.post('http://localhost:8080/myfirst_app_api/products_update.php', this.productForm)
+    // -------------------------
+    // SAVE PRODUCT (INSERT / UPDATE)
+    // -------------------------
+    async saveProduct() {
+      if (!this.productForm.name || !this.productForm.price) {
+        return alert("กรุณากรอกชื่อสินค้าและราคา")
+      }
+
+      this.loading = true
+
+      try {
+        if (this.isEdit) {
+          const { error } = await this.$supabase
+            .from("products")
+            .update({
+              name: this.productForm.name,
+              price: Number(this.productForm.price),
+              detail: this.productForm.detail
+            })
+            .eq("id", this.productForm.id)
+
+          if (error) throw error
         } else {
-          await this.$axios.post('http://localhost:8080/myfirst_app_api/products_insert.php', this.productForm)
+          const { error } = await this.$supabase.from("products").insert([
+            {
+              name: this.productForm.name,
+              price: Number(this.productForm.price),
+              detail: this.productForm.detail
+            }
+          ])
+
+          if (error) throw error
         }
+
         this.productDialog = false
-        this.productQuery()
-      }catch(e){
+        await this.productQuery()
+      } catch (e) {
         console.error(e)
+        alert(e.message || "บันทึกสินค้าไม่สำเร็จ")
+      } finally {
+        this.loading = false
       }
     },
 
-    async deleteProduct(item){
-      if(!confirm('Delete this product?')) return
-      try{
-        await this.$axios.post('http://localhost:8080/myfirst_app_api/products_delete.php', { products_id: item.products_id })
-        this.productQuery()
-      }catch(e){
+    // -------------------------
+    // DELETE
+    // -------------------------
+    async deleteProduct(item) {
+      if (!confirm("Delete this product?")) return
+
+      try {
+        const { error } = await this.$supabase
+          .from("products")
+          .delete()
+          .eq("id", item.id)
+
+        if (error) throw error
+        await this.productQuery()
+      } catch (e) {
         console.error(e)
+        alert(e.message || "ลบสินค้าไม่สำเร็จ")
       }
     },
 
-    ...mapActions({
-      setName: 'cart/setName',
-    }),
+    // -------------------------
+    // ADD TO CART
+    // -------------------------
     addToCart(item) {
-      this.setName({ products_id: item.products_id })
-    },
-  },
+      // เก็บลง Vuex หรือ localStorage ก็ได้
+      // ตัวนี้ผมทำเป็น Vuex action ชื่อ cart/addCart
+
+      this.addCart({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        detail: item.detail,
+        image_url: item.image_url || null,
+        quantity: 1
+      })
+
+      alert(`เพิ่ม "${item.name}" ลงตะกร้าแล้ว!`)
+    }
+  }
 }
 </script>
