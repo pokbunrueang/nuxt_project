@@ -65,7 +65,7 @@
                   fab
                   x-large
                   :color="menu.color"
-                  :to="menu.link"
+                  @click="navigateTo(menu.link)"
                   :elevation="hover ? 16 : 4"
                   size="80"
                   class="mb-4 transition-swing"
@@ -86,67 +86,22 @@
 
 <script>
 export default {
-  middleware: 'auth-admin', // << ใช้ middleware ใหม่ที่เช็ค role จาก profiles
+  // 🚩 มั่นใจว่าไฟล์ middleware/auth-admin.js ถูกสร้างไว้แล้ว
+  middleware: 'auth-admin',
 
   data: () => ({
     loading: true,
-
     stats: [
-      {
-        id: 'today_sales',
-        title: 'ยอดขายวันนี้',
-        value: '0 ฿',
-        icon: 'mdi-cash-multiple',
-        color: 'success',
-      },
-      {
-        id: 'new_orders',
-        title: 'ออเดอร์ใหม่',
-        value: '0',
-        icon: 'mdi-cart-arrow-down',
-        color: 'primary',
-      },
-      {
-        id: 'total_manga',
-        title: 'มังงะทั้งหมด',
-        value: '0',
-        icon: 'mdi-book-multiple',
-        color: 'purple',
-      },
-      {
-        id: 'total_members',
-        title: 'สมาชิกร้าน',
-        value: '0',
-        icon: 'mdi-account-group',
-        color: 'info',
-      },
+      { id: 'today_sales', title: 'ยอดขายวันนี้', value: '0 ฿', icon: 'mdi-cash-multiple', color: 'success' },
+      { id: 'new_orders', title: 'ออเดอร์ใหม่', value: '0', icon: 'mdi-cart-arrow-down', color: 'primary' },
+      { id: 'total_manga', title: 'มังงะทั้งหมด', value: '0', icon: 'mdi-book-multiple', color: 'purple' },
+      { id: 'total_members', title: 'สมาชิกร้าน', value: '0', icon: 'mdi-account-group', color: 'info' },
     ],
-
     quickMenus: [
-      {
-        text: 'จัดการสินค้า',
-        icon: 'mdi-package-variant-closed',
-        color: 'teal',
-        link: '/admin/products',
-      },
-      {
-        text: 'จัดการออเดอร์',
-        icon: 'mdi-clipboard-list',
-        color: 'orange',
-        link: '/admin/orders',
-      },
-      {
-        text: 'รายงานสรุป',
-        icon: 'mdi-chart-bar',
-        color: 'blue',
-        link: '/admin/reports',
-      },
-      {
-        text: 'ตั้งค่าร้าน',
-        icon: 'mdi-cog',
-        color: 'grey darken-1',
-        link: '/admin/settings',
-      },
+      { text: 'จัดการสินค้า', icon: 'mdi-package-variant-closed', color: 'teal', link: '/admin/products' },
+      { text: 'จัดการออเดอร์', icon: 'mdi-clipboard-list', color: 'orange', link: '/admin/orders' },
+      { text: 'รายงานสรุป', icon: 'mdi-chart-bar', color: 'blue', link: '/admin/reports' },
+      { text: 'แชทลูกค้า', icon: 'mdi-chat-processing', color: 'grey darken-1', link: '/admin/chat' },
     ],
   }),
 
@@ -155,68 +110,58 @@ export default {
   },
 
   methods: {
-    // ดึงสถิติจาก Supabase
+    // ฟังก์ชันช่วยนำทางเพื่อความแม่นยำ
+    navigateTo(path) {
+      this.$router.push(path)
+    },
+
     async fetchDashboardStats() {
       this.loading = true
       try {
-        // 1) ยอดขายวันนี้ (sum total_price)
         const today = new Date()
         today.setHours(0, 0, 0, 0)
         const isoToday = today.toISOString()
 
+        // 1) ดึง Order วันนี้
         const { data: ordersToday, error: ordersErr } = await this.$supabase
           .from('orders')
-          .select('total_price, created_at, status')
+          .select('total_price, status')
           .gte('created_at', isoToday)
 
-        if (ordersErr) throw ordersErr
-
-        const todaySales = (ordersToday || []).reduce((sum, o) => {
-          return sum + Number(o.total_price || 0)
-        }, 0)
-
-        // 2) ออเดอร์ใหม่ (pending)
-        const newOrders = (ordersToday || []).filter((o) => o.status === 'pending').length
-
-        // 3) จำนวนมังงะทั้งหมด
-        const { count: mangaCount, error: mangaErr } = await this.$supabase
+        // 2) จำนวนมังงะ (Products)
+        const { count: mangaCount } = await this.$supabase
           .from('products')
           .select('id', { count: 'exact', head: true })
 
-        if (mangaErr) throw mangaErr
-
-        // 4) จำนวนสมาชิกทั้งหมด
-        const { count: memberCount, error: memberErr } = await this.$supabase
+        // 3) จำนวนสมาชิก (Profiles)
+        const { count: memberCount } = await this.$supabase
           .from('profiles')
           .select('id', { count: 'exact', head: true })
 
-        if (memberErr) throw memberErr
+        // คำนวณยอดขาย
+        const todaySales = (ordersToday || []).reduce((sum, o) => sum + Number(o.total_price || 0), 0)
+        const newOrders = (ordersToday || []).filter((o) => o.status === 'pending').length
 
-        // update UI
+        // อัปเดต UI
         this.stats[0].value = `${todaySales.toLocaleString()} ฿`
         this.stats[1].value = `${newOrders}`
         this.stats[2].value = `${mangaCount || 0}`
         this.stats[3].value = `${memberCount || 0}`
       } catch (e) {
-        console.error('Dashboard Stats Error:', e)
+        console.warn('Stats load warning:', e.message)
       } finally {
         this.loading = false
       }
     },
 
-    // Logout Supabase
     async handleLogout() {
       if (!confirm('คุณต้องการออกจากระบบใช่หรือไม่?')) return
-
       try {
-        const { error } = await this.$supabase.auth.signOut()
-        if (error) throw error
-
-        localStorage.removeItem('manga_cart') // ตะกร้าเก็บไว้ก็ได้ แต่ส่วนใหญ่ลบ
-        this.$router.push('/login')
+        await this.$supabase.auth.signOut()
+        // 🚩 บังคับล้างสถานะและกลับไปหน้าล็อกอิน
+        window.location.assign('/login')
       } catch (e) {
-        console.error(e)
-        alert(e.message || 'ออกจากระบบไม่สำเร็จ')
+        alert('ออกจากระบบไม่สำเร็จ')
       }
     },
   },
@@ -224,18 +169,8 @@ export default {
 </script>
 
 <style scoped>
-.bg-admin-main {
-  background-color: #0d0d0d;
-  min-height: 100vh;
-}
-.card-dark {
-  background-color: #1a1a1a !important;
-  border: 1px solid #333 !important;
-}
-.uppercase {
-  text-transform: uppercase;
-}
-.transition-swing {
-  transition: 0.3s cubic-bezier(0.25, 0.8, 0.5, 1);
-}
+.bg-admin-main { background-color: #0d0d0d; min-height: 100vh; }
+.card-dark { background-color: #1a1a1a !important; border: 1px solid #333 !important; }
+.uppercase { text-transform: uppercase; }
+.transition-swing { transition: 0.3s cubic-bezier(0.25, 0.8, 0.5, 1); }
 </style>

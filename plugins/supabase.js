@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
-export default ({ $config }, inject) => {
+export default (context, inject) => {
   const supabase = createClient(
-    $config.SUPABASE_URL,
-    $config.SUPABASE_ANON_KEY
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
   )
 
   inject('supabase', supabase)

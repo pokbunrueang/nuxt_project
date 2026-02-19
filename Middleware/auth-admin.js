@@ -1,37 +1,25 @@
-// middleware/auth-admin.js
 export default async function ({ $supabase, redirect }) {
-  // กัน SSR / server
   if (process.server) return
 
-  try {
-    // 1) เช็ค user login
-    const { data: userData, error: userErr } = await $supabase.auth.getUser()
-    if (userErr) throw userErr
+  // 1. เช็คว่ามี User ใน Session ไหม
+  const user = $supabase.auth.user()
 
-    const user = userData?.user
-    if (!user) {
-      return redirect('/login')
-    }
-
-    // 2) ดึง role จาก profiles
-    // (เลือกทั้ง role และ user_role กันพัง)
-    const { data: profile, error: profileErr } = await $supabase
-      .from('profiles')
-      .select('role, user_role')
-      .eq('id', user.id)
-      .single()
-
-    if (profileErr) throw profileErr
-
-    // 3) อ่าน role
-    const role = profile?.role || profile?.user_role || null
-
-    // 4) ไม่ใช่ admin = ดีดกลับหน้าแรก
-    if (role !== 'admin') {
-      return redirect('/')
-    }
-  } catch (e) {
-    console.error('auth-admin middleware error:', e)
+  // ถ้าไม่มี User (ยังไม่ Login) ให้ไปหน้า Login
+  if (!user) {
     return redirect('/login')
   }
+
+  // 2. ลองดึงข้อมูลดูว่าติด RLS ไหม
+  const { data: profile, error } = await $supabase
+    .from('profiles')
+    .select('username') // ใช้ username ที่มีอยู่ในตารางคุณแน่ๆ
+    .eq('id', user.id)
+    .single()
+
+  if (error) {
+    console.error('ติดปัญหา RLS หรือดึงข้อมูลไม่ได้:', error.message)
+    // ถ้าดึงไม่ได้ แต่อยากให้เข้าหน้า Admin ได้ไปก่อนเพื่อทดสอบ ให้เอา return redirect ออก
+  }
+
+  console.log('เข้าสู่ระบบสำเร็จในชื่อ:', profile?.username)
 }

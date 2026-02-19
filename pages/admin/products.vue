@@ -2,7 +2,7 @@
   <v-container fluid class="bg-admin-main pa-6">
     <v-row class="mb-6 align-center">
       <v-col class="d-flex align-center">
-        <v-btn icon to="/admin" class="mr-2" color="white">
+        <v-btn icon to="/admin/index_ad" class="mr-2" color="white">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <h1 class="text-h4 font-weight-black white--text uppercase">
