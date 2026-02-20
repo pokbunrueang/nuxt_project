@@ -4,13 +4,13 @@
       <v-btn icon to="/admin/index_ad" class="mr-4 bg-dark-soft" color="white">
         <v-icon>mdi-arrow-left</v-icon>
       </v-btn>
-      <h1 class="text-h4 font-weight-black white--text">Sales <span class="primary--text">Reports</span></h1>
+      <h1 class="text-h4 font-weight-black white--text">รายงาน <span class="primary--text">ยอดขาย</span></h1>
     </div>
 
     <v-row>
       <v-col cols="12" md="6">
         <v-card dark class="card-dark pa-10 border-light h-100 d-flex flex-column align-center justify-center text-center" rounded="xl">
-          <div class="grey--text text-h6 mb-2">Total Revenue</div>
+          <div class="grey--text text-h6 mb-2">รายได้รวม</div>
           <div class="text-h2 font-weight-black success--text mb-6">
             {{ totalRevenue.toLocaleString() }} <span class="text-h3">฿</span>
           </div>

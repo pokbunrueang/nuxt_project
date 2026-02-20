@@ -56,7 +56,7 @@
       </v-btn>
     </v-app-bar>
 
-    <v-container class="pa-6 mt-4">
+    <v-container class="pa-6 mt-4 pb-12">
       <v-row class="mb-10 align-center">
         <v-col cols="12" md="8">
           <h1 class="display-1 font-weight-black white--text mb-2">
@@ -117,6 +117,70 @@
         </v-col>
       </v-row>
     </v-container>
+
+    <v-footer color="#0D0D0D" dark class="border-top-footer py-12">
+      <v-container>
+        <v-row>
+          <v-col cols="12" md="4" class="mb-6 mb-md-0">
+            <div class="d-flex align-center mb-4">
+              <v-img src="/manga.png" max-width="40" class="mr-3"></v-img>
+              <span class="text-h6 font-weight-black primary--text">MANGA STORE</span>
+            </div>
+            <p class="grey--text text--lighten-1">
+              แหล่งรวบรวมหนังสือการ์ตูนมังงะคุณภาพเยี่ยม ส่งตรงถึงหน้าบ้านคุณ เพื่อคอมังงะโดยเฉพาะ
+            </p>
+            <div class="d-flex mt-4">
+              <v-btn icon color="primary" class="mr-2"><v-icon>mdi-facebook</v-icon></v-btn>
+              <v-btn icon color="primary" class="mr-2"><v-icon>mdi-twitter</v-icon></v-btn>
+              <v-btn icon color="primary"><v-icon>mdi-instagram</v-icon></v-btn>
+            </div>
+          </v-col>
+
+          <v-col cols="6" md="2" class="mb-6 mb-md-0">
+            <h3 class="white--text font-weight-bold mb-4">ลิงก์ด่วน</h3>
+            <v-list color="transparent" class="pa-0">
+              <v-list-item class="pa-0 min-h-0 mb-2 cursor-pointer" @click="$router.push('/')">
+                <span class="grey--text text--lighten-1 hover-primary text-body-2">หน้าหลัก</span>
+              </v-list-item>
+              <v-list-item class="pa-0 min-h-0 mb-2 cursor-pointer" @click="$router.push('/cart')">
+                <span class="grey--text text--lighten-1 hover-primary text-body-2">ตะกร้าสินค้า</span>
+              </v-list-item>
+            </v-list>
+          </v-col>
+
+          <v-col cols="6" md="2" class="mb-6 mb-md-0">
+            <h3 class="white--text font-weight-bold mb-4">ความช่วยเหลือ</h3>
+            <v-list color="transparent" class="pa-0">
+              <v-list-item class="pa-0 min-h-0 mb-2 cursor-pointer" @click="$router.push('/chat')">
+                <span class="grey--text text--lighten-1 hover-primary text-body-2">ติดต่อแอดมิน</span>
+              </v-list-item>
+              </v-list>
+          </v-col>
+
+          <v-col cols="12" md="4">
+            <h3 class="white--text font-weight-bold mb-4">ติดต่อเรา</h3>
+            <div class="d-flex align-start mb-2">
+              <v-icon small color="primary" class="mr-2 mt-1">mdi-map-marker</v-icon>
+              <span class="grey--text text--lighten-1 text-body-2">123 ถนนคนรักมังงะ แขวงสนามศุภฯ กรุงเทพฯ</span>
+            </div>
+            <div class="d-flex align-center mb-2">
+              <v-icon small color="primary" class="mr-2">mdi-phone</v-icon>
+              <span class="grey--text text--lighten-1 text-body-2">02-123-4567</span>
+            </div>
+            <div class="d-flex align-center">
+              <v-icon small color="primary" class="mr-2">mdi-email</v-icon>
+              <span class="grey--text text--lighten-1 text-body-2">support@mangastore.com</span>
+            </div>
+          </v-col>
+        </v-row>
+        
+        <v-divider class="my-8 grey darken-4"></v-divider>
+        
+        <div class="text-center grey--text text--darken-2 text-caption">
+          © {{ new Date().getFullYear() }} MANGA STORE. All rights reserved.
+        </div>
+      </v-container>
+    </v-footer>
 
     <v-dialog v-model="detailDialog" max-width="850px" transition="dialog-bottom-transition" dark>
       <v-card v-if="selectedProduct" rounded="xl" class="card-dark overflow-hidden border-glow">
@@ -202,15 +266,26 @@ export default {
 </script>
 
 <style scoped>
+/* ส่วน Layout และสีพื้นฐาน */
 .bg-main { background-color: #0d0d0d; min-height: 100vh; }
 .card-dark { background-color: #1a1a1a !important; border: 1px solid #333 !important; }
 .border-bottom { border-bottom: 1px solid #282828 !important; }
 .text-glow { text-shadow: 0 0 15px rgba(33, 150, 243, 0.4); }
+
+/* สไตล์การ์ดสินค้าและการ Hover */
 .card-product { background-color: #161616 !important; border: 1px solid #282828 !important; transition: 0.4s; }
 .card-product:hover { transform: translateY(-12px); border-color: #2196F3 !important; }
 .price-tag { background: linear-gradient(135deg, #2196F3 0%, #1565C0 100%); border-top-right-radius: 24px; position: absolute; bottom: 20px; left: 0; z-index: 2; }
 .v-card--reveal { align-items: center; bottom: 0; justify-content: center; opacity: .8; position: absolute; width: 100%; background-color: rgba(0, 0, 0, 0.7); z-index: 1; }
+
+/* การจัดการข้อความ */
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .custom-line-height { line-height: 1.8 !important; }
 .border-glow { border: 1px solid rgba(33, 150, 243, 0.3) !important; }
+
+/* สไตล์ Footer */
+.border-top-footer { border-top: 2px solid #1a1a1a !important; }
+.min-h-0 { min-height: 0 !important; }
+.hover-primary:hover { color: #2196F3 !important; transition: 0.3s; }
+.cursor-pointer { cursor: pointer; }
 </style>

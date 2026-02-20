@@ -8,7 +8,7 @@
         <div>
           <h1 class="text-h4 font-weight-black white--text d-flex align-center">
             <v-icon color="primary" size="40" class="mr-3">mdi-clipboard-list</v-icon>
-            Order <span class="primary--text ml-2">Management</span>
+            จัดการ <span class="primary--text ml-2">รายการสั่งซื้อ</span>
           </h1>
           <p class="grey--text mb-0">ติดตามและจัดการรายการสั่งซื้อทั้งหมด</p>
         </div>
